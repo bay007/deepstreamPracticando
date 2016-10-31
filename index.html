@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+  <head>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/deepstream.io-client-js/1.1.1/deepstream.js"></script>
+  </head>
+  <body>
+    <input type="text"/>
+  </body>
+  <script type="text/javascript">
+		var todos,
+			input,
+			empanaderia,
+			amzn;
+
+			input = document.querySelector('input');
+			ds = deepstream('192.168.0.105:6020').login({},onConnected );
+
+			function onConnected(e) {
+				const queryString = JSON.stringify({
+				  table: 'datosGenerales',
+				  query: [
+					['RFC', 'match', '.*XAXX01010100.*']
+				  ]
+				});
+				
+				todos = ds.record.getList('search?' + queryString);
+				
+				todos.whenReady(function (){
+					empanaderia=todos.getEntries();
+					
+					amzn = ds.record.getRecord('datosGenerales/'+empanaderia,{
+						store: true
+					});
+					
+					amzn.subscribe( 'razonComercial', function( companyName ){
+						//console.log( companyName );
+						input.value = companyName;
+					},true);
+
+					amzn.subscribe( 'razonSocial', function( lastPrice ){
+						//console.log(lastPrice);
+					},true);
+					
+					amzn.subscribe( 'menuGral', function( menuGral ){
+						//console.log(menuGral);
+					},true);
+					
+					input.onkeyup = (function(e) {
+						if(e.key=="Enter"||e.key=="Backspace")
+						amzn.set('razonComercial',input.value);
+						console.log(e);
+					})
+				});
+			}
+    </script>
+</html>
